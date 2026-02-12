@@ -1,0 +1,35 @@
+name: SP-QUiz Module Tests
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Display Python version
+      run: python -c "import sys; print(sys.version)"
+    
+    - name: Run all tests
+      run: python3 tests/run_tests.py
+    
+    - name: Run unit tests separately
+      run: python3 tests/run_tests.py --type unit
+    
+    - name: Run integration tests separately
+      run: python3 tests/run_tests.py --type integration
