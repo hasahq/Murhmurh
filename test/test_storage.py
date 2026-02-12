@@ -13,7 +13,7 @@ Tests cover:
 """
 
 import unittest
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import get_type_hints
 import sys
 import os
