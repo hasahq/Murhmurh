@@ -26,10 +26,10 @@ jobs:
       run: python -c "import sys; print(sys.version)"
     
     - name: Run all tests
-      run: python3 tests/run_tests.py
+      run: python3 test/run_tests.py
     
     - name: Run unit tests separately
-      run: python3 tests/run_tests.py --type unit
+      run: python3 test/run_tests.py --type unit
     
     - name: Run integration tests separately
-      run: python3 tests/run_tests.py --type integration
+      run: python3 test/run_tests.py --type integration
