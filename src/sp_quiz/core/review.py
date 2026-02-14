@@ -47,7 +47,7 @@ class Review:
     card_id: str
     user_id: str
     session_id: str
-    quality: int[Optional]
+    quality: Optional[int]
     time_taken_seconds: float
     state_before: CardState
     interval_before: float
