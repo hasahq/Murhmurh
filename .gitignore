@@ -2,5 +2,6 @@ metaInfo/*
 # For Advanced CI/CD Workflow checking. Disabled for Now
 .github/workflows/advanced-ci.yml
 
-# Any & All __pycache__ files from local runs
+# Any & All __pycache__ and .venv files from local runs
 *__pycache__
+*.venv

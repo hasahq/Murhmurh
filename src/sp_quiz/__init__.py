@@ -29,5 +29,38 @@ from sp_quiz.__version__ import __version__
 from sp_quiz.core import (
     Card,
     CardState,
-    Review
+    Review,
+    UserProgress,
+    SpQuizError,
+    CardNotFoundError,
+    InvalidCardStateError,
+    SessionNotFoundError,
+    SessionClosedError,
+    InvalidQualityRatingError,
+    StorageError,
+    ConcurrencyError,
 )
+
+from sp_quiz.storage import (
+    StorageInterface,
+    InMemoryStorage
+)
+
+__all__ = [
+    '__version__',
+    'Card',
+    'CardState',
+    'Review',
+    'UserProgress',
+    'SpQuizError',
+    'CardNotFoundError',
+    'InvalidCardStateError',
+    'SessionNotFoundError',
+    'SessionClosedError',
+    'InvalidQualityRatingError',
+    'StorageError',
+    'ConcurrencyError',
+    'StorageInterface',
+    'InMemoryStorage',
+]
+
