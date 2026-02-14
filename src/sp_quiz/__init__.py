@@ -27,5 +27,7 @@ Features:
 from sp_quiz.__version__ import __version__
 
 from sp_quiz.core import (
-    Card
+    Card,
+    CardState,
+    Review
 )
