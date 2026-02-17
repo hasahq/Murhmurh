@@ -141,7 +141,7 @@ class TestReviewStorageIntegration(unittest.TestCase):
                 state_after=state_after,
                 interval_after=interval_after,
                 ease_factor_after=2.5,
-                due_datetime_after=datetime.datetime.utcnow() + timedelta(days=interval_after)
+                due_datetime_after=datetime.utcnow() + timedelta(days=interval_after)
             )
             self.storage.save_review(review)
         
@@ -172,7 +172,7 @@ class TestReviewStorageIntegration(unittest.TestCase):
                     state_after=CardState.LEARNING,
                     interval_after=1.0,
                     ease_factor_after=2.5,
-                    due_datetime_after=datetime.datetime.utcnow()
+                    due_datetime_after=datetime.utcnow()
                 )
                 self.storage.save_review(review)
         
@@ -223,7 +223,7 @@ class TestUserProgressIntegration(unittest.TestCase):
                 state_after=CardState.LEARNING,
                 interval_after=1.0,
                 ease_factor_after=2.5,
-                due_datetime_after=datetime.datetime.utcnow()
+                due_datetime_after=datetime.utcnow()
             )
             self.storage.save_review(review)
         
@@ -329,7 +329,7 @@ class TestCompleteWorkflow(unittest.TestCase):
             state_after=CardState.LEARNING,
             interval_after=1.0,
             ease_factor_after=2.5,
-            due_datetime_after=datetime.datetime.utcnow() + timedelta(minutes=1)
+            due_datetime_after=datetime.utcnow() + timedelta(minutes=1)
         )
         self.storage.save_review(review)
         
@@ -337,7 +337,7 @@ class TestCompleteWorkflow(unittest.TestCase):
         first_card.state = CardState.LEARNING
         first_card.interval_days = 1.0
         first_card.reviews_count = 1
-        first_card.last_reviewed_at = datetime.datetime.utcnow()
+        first_card.last_reviewed_at = datetime.utcnow()
         self.storage.update_card(first_card)
         
         # 6. Update user progress
@@ -347,7 +347,7 @@ class TestCompleteWorkflow(unittest.TestCase):
         progress.new_cards_count = cards_to_add - 1
         progress.learning_cards_count = 1
         progress.current_streak_days = 1
-        progress.last_review_date = datetime.datetime.utcnow()
+        progress.last_review_date = datetime.utcnow()
         self.storage.update_user_progress(progress)
         
         # 7. Verify final state
@@ -398,7 +398,7 @@ class TestCompleteWorkflow(unittest.TestCase):
                 state_after=state_after,
                 interval_after=interval_after,
                 ease_factor_after=2.5,
-                due_datetime_after=datetime.datetime.utcnow() + timedelta(days=interval_after)
+                due_datetime_after=datetime.utcnow() + timedelta(days=interval_after)
             )
             self.storage.save_review(review)
             
@@ -407,7 +407,7 @@ class TestCompleteWorkflow(unittest.TestCase):
             card.state = state_after
             card.interval_days = interval_after
             card.reviews_count += 1
-            card.last_reviewed_at = datetime.datetime.utcnow()
+            card.last_reviewed_at = datetime.utcnow()
             self.storage.update_card(card)
         
         # Verify final state
@@ -460,7 +460,7 @@ class TestDataConsistency(unittest.TestCase):
                 state_after=CardState.LEARNING,
                 interval_after=10.0,
                 ease_factor_after=2.5,
-                due_datetime_after=datetime.datetime.utcnow()
+                due_datetime_after=datetime.utcnow()
             )
             self.storage.save_review(review)
         

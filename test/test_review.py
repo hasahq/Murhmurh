@@ -30,7 +30,7 @@ class TestReviewCreation(unittest.TestCase):
     
     def test_minimal_review_creation(self):
         """Test creating review with required fields."""
-        now = datetime.datetime.utcnow()
+        now = datetime.utcnow()
         due_after = now + timedelta(days=1)
         
         review = Review(
@@ -65,7 +65,7 @@ class TestReviewCreation(unittest.TestCase):
     
     def test_review_with_all_fields(self):
         """Test creating review with all fields including optional."""
-        now = datetime.datetime.utcnow()
+        now = datetime.utcnow()
         due_after = now + timedelta(days=1)
         
         review = Review(
@@ -90,7 +90,7 @@ class TestReviewCreation(unittest.TestCase):
     
     def test_reviewed_at_defaults_to_now(self):
         """Test reviewed_at defaults to current time."""
-        before = datetime.datetime.utcnow()
+        before = datetime.utcnow()
         
         review = Review(
             review_id="rev_001",
@@ -105,10 +105,10 @@ class TestReviewCreation(unittest.TestCase):
             state_after=CardState.LEARNING,
             interval_after=1.0,
             ease_factor_after=2.5,
-            due_datetime_after=datetime.datetime.utcnow()
+            due_datetime_after=datetime.utcnow()
         )
         
-        after = datetime.datetime.utcnow()
+        after = datetime.utcnow()
         
         self.assertGreaterEqual(review.reviewed_at, before)
         self.assertLessEqual(review.reviewed_at, after)
@@ -133,7 +133,7 @@ class TestReviewValidation(unittest.TestCase):
                 state_after=CardState.LEARNING,
                 interval_after=1.0,
                 ease_factor_after=2.5,
-                due_datetime_after=datetime.datetime.utcnow()
+                due_datetime_after=datetime.utcnow()
             )
         
         self.assertIn("quality must be between 0 and 5", str(context.exception))
@@ -154,7 +154,7 @@ class TestReviewValidation(unittest.TestCase):
                 state_after=CardState.LEARNING,
                 interval_after=1.0,
                 ease_factor_after=2.5,
-                due_datetime_after=datetime.datetime.utcnow()
+                due_datetime_after=datetime.utcnow()
             )
         
         self.assertIn("quality must be between 0 and 5", str(context.exception))
@@ -174,7 +174,7 @@ class TestReviewValidation(unittest.TestCase):
             state_after=CardState.RELEARNING,
             interval_after=1.0,
             ease_factor_after=2.3,
-            due_datetime_after=datetime.datetime.utcnow()
+            due_datetime_after=datetime.utcnow()
         )
         
         self.assertEqual(review.quality, 0)
@@ -194,7 +194,7 @@ class TestReviewValidation(unittest.TestCase):
             state_after=CardState.REVIEW,
             interval_after=14.0,
             ease_factor_after=2.6,
-            due_datetime_after=datetime.datetime.utcnow()
+            due_datetime_after=datetime.utcnow()
         )
         
         self.assertEqual(review.quality, 5)
@@ -215,7 +215,7 @@ class TestReviewValidation(unittest.TestCase):
                 state_after=CardState.LEARNING,
                 interval_after=1.0,
                 ease_factor_after=2.5,
-                due_datetime_after=datetime.datetime.utcnow()
+                due_datetime_after=datetime.utcnow()
             )
             
             self.assertEqual(review.quality, quality_level)
@@ -236,7 +236,7 @@ class TestReviewValidation(unittest.TestCase):
                 state_after=CardState.LEARNING,
                 interval_after=1.0,
                 ease_factor_after=2.5,
-                due_datetime_after=datetime.datetime.utcnow()
+                due_datetime_after=datetime.utcnow()
             )
         
         self.assertIn("time_taken_seconds must be non-negative", str(context.exception))
@@ -256,7 +256,7 @@ class TestReviewValidation(unittest.TestCase):
             state_after=CardState.LEARNING,
             interval_after=1.0,
             ease_factor_after=2.5,
-            due_datetime_after=datetime.datetime.utcnow()
+            due_datetime_after=datetime.utcnow()
         )
         
         self.assertEqual(review.time_taken_seconds, 0.0)
@@ -322,7 +322,7 @@ class TestReviewEdgeCases(unittest.TestCase):
             state_after=CardState.REVIEW,
             interval_after=14.0,
             ease_factor_after=2.5,
-            due_datetime_after=datetime.datetime.utcnow()
+            due_datetime_after=datetime.utcnow()
         )
         
         self.assertEqual(review.time_taken_seconds, 3600.0)
@@ -342,7 +342,7 @@ class TestReviewEdgeCases(unittest.TestCase):
             state_after=CardState.LEARNING,
             interval_after=10.0,
             ease_factor_after=2.5,
-            due_datetime_after=datetime.datetime.utcnow()
+            due_datetime_after=datetime.utcnow()
         )
         
         self.assertAlmostEqual(review.time_taken_seconds, 1.234567)
@@ -362,7 +362,7 @@ class TestReviewEdgeCases(unittest.TestCase):
             state_after=CardState.LEARNING,
             interval_after=1.0,
             ease_factor_after=2.5,
-            due_datetime_after=datetime.datetime.utcnow()
+            due_datetime_after=datetime.utcnow()
         )
         
         self.assertEqual(review.interval_before, 0.0)
@@ -382,7 +382,7 @@ class TestReviewEdgeCases(unittest.TestCase):
             state_after=CardState.LEARNING,
             interval_after=0.00694444,  # 10 minutes in days
             ease_factor_after=2.5,
-            due_datetime_after=datetime.datetime.utcnow()
+            due_datetime_after=datetime.utcnow()
         )
         
         self.assertAlmostEqual(review.interval_before, 0.00069444, places=8)
@@ -403,7 +403,7 @@ class TestReviewEdgeCases(unittest.TestCase):
             state_after=CardState.REVIEW,
             interval_after=365.0,
             ease_factor_after=2.5,
-            due_datetime_after=datetime.datetime.utcnow()
+            due_datetime_after=datetime.utcnow()
         )
         
         self.assertEqual(review.interval_before, 180.0)
@@ -424,7 +424,7 @@ class TestReviewEdgeCases(unittest.TestCase):
             state_after=CardState.RELEARNING,
             interval_after=1.0,
             ease_factor_after=2.3,  # Decreased
-            due_datetime_after=datetime.datetime.utcnow()
+            due_datetime_after=datetime.utcnow()
         )
         
         self.assertEqual(review.ease_factor_before, 2.5)
@@ -445,7 +445,7 @@ class TestReviewEdgeCases(unittest.TestCase):
             state_after=CardState.LEARNING,
             interval_after=1.0,
             ease_factor_after=2.5,
-            due_datetime_after=datetime.datetime.utcnow()
+            due_datetime_after=datetime.utcnow()
         )
         
         self.assertEqual(review.state_before, CardState.NEW)
@@ -466,7 +466,7 @@ class TestReviewEdgeCases(unittest.TestCase):
             state_after=CardState.REVIEW,
             interval_after=1.0,
             ease_factor_after=2.5,
-            due_datetime_after=datetime.datetime.utcnow()
+            due_datetime_after=datetime.utcnow()
         )
         
         self.assertEqual(review.state_before, CardState.LEARNING)
@@ -487,7 +487,7 @@ class TestReviewEdgeCases(unittest.TestCase):
             state_after=CardState.RELEARNING,
             interval_after=1.0,
             ease_factor_after=2.3,
-            due_datetime_after=datetime.datetime.utcnow()
+            due_datetime_after=datetime.utcnow()
         )
         
         self.assertEqual(review.state_before, CardState.REVIEW)
@@ -508,7 +508,7 @@ class TestReviewEdgeCases(unittest.TestCase):
             state_after=CardState.LEARNING,
             interval_after=10.0,
             ease_factor_after=2.5,
-            due_datetime_after=datetime.datetime.utcnow()
+            due_datetime_after=datetime.utcnow()
         )
         
         self.assertEqual(review.state_before, review.state_after)
@@ -519,7 +519,7 @@ class TestReviewEquality(unittest.TestCase):
     
     def test_reviews_with_same_data_are_equal(self):
         """Test reviews with identical data are equal."""
-        now = datetime.datetime.utcnow()
+        now = datetime.utcnow()
         due = now + timedelta(days=1)
         
         review1 = Review(
@@ -560,7 +560,7 @@ class TestReviewEquality(unittest.TestCase):
     
     def test_reviews_with_different_ids_are_not_equal(self):
         """Test reviews with different IDs are not equal."""
-        now = datetime.datetime.utcnow()
+        now = datetime.utcnow()
         due = now + timedelta(days=1)
         
         review1 = Review(

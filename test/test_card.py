@@ -67,7 +67,7 @@ class TestCardCreation(unittest.TestCase):
     
     def test_full_card_creation(self):
         """Test creating card with all fields."""
-        now = datetime.datetime.utcnow()
+        now = datetime.utcnow()
         due = now + timedelta(days=1)
         
         card = Card(
@@ -215,7 +215,7 @@ class TestCardValidation(unittest.TestCase):
     def test_whitespace_only_front_raises_error(self):
         """Test that whitespace-only front raises ValueError."""
         with self.assertRaises(ValueError) as context:
-            card(card_id="card_001", user_id="user_123", front="   ", back="A")
+            Card(card_id="card_001", user_id="user_123", front="   ", back="A")
         
         self.assertIn("front and back content are required", str(context.exception))
 
@@ -262,7 +262,7 @@ class TestCardEquality(unittest.TestCase):
     
     def test_cards_with_same_data_are_equal(self):
         """Test that cards with identical data are equal."""
-        now = datetime.datetime.utcnow()
+        now = datetime.utcnow()
         
         card1 = Card(
             card_id="card_001",
@@ -551,7 +551,7 @@ class TestCardEdgeCases(unittest.TestCase):
     
     def test_future_due_date(self):
         """Test card with due date far in the future."""
-        far_future = datetime.datetime.utcnow() + timedelta(days=36500)  # 100 years
+        far_future = datetime.utcnow() + timedelta(days=36500)  # 100 years
         card = Card(
             card_id="card_001",
             user_id="user_123",
@@ -564,7 +564,7 @@ class TestCardEdgeCases(unittest.TestCase):
     
     def test_past_due_date(self):
         """Test card with due date in the past."""
-        past = datetime.datetime.utcnow() - timedelta(days=365)
+        past = datetime.utcnow() - timedelta(days=365)
         card = Card(
             card_id="card_001",
             user_id="user_123",
@@ -660,18 +660,18 @@ class TestCardTimestamps(unittest.TestCase):
     
     def test_created_at_defaults_to_now(self):
         """Test created_at defaults to current time."""
-        before = datetime.datetime.utcnow()
+        before = datetime.utcnow()
         card = Card(card_id="card_001", user_id="user_123", front="Q", back="A")
-        after = datetime.datetime.utcnow()
+        after = datetime.utcnow()
         
         self.assertGreaterEqual(card.created_at, before)
         self.assertLessEqual(card.created_at, after)
     
     def test_updated_at_defaults_to_now(self):
         """Test updated_at defaults to current time."""
-        before = datetime.datetime.utcnow()
+        before = datetime.utcnow()
         card = Card(card_id="card_001", user_id="user_123", front="Q", back="A")
-        after = datetime.datetime.utcnow()
+        after = datetime.utcnow()
         
         self.assertGreaterEqual(card.updated_at, before)
         self.assertLessEqual(card.updated_at, after)
