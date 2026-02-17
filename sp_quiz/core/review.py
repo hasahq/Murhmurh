@@ -10,7 +10,6 @@ Classes:
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Optional
 
 from sp_quiz.core.card import CardState
 
@@ -47,7 +46,7 @@ class Review:
     card_id: str
     user_id: str
     session_id: str
-    quality: Optional[int]
+    quality: int
     time_taken_seconds: float
     state_before: CardState
     interval_before: float
@@ -56,7 +55,7 @@ class Review:
     interval_after: float
     ease_factor_after: float
     due_datetime_after: datetime
-    reviewed_at: datetime = field(default_factory=datetime.datetime.utcnow)
+    reviewed_at: datetime = field(default_factory=datetime.utcnow)
     
     def __post_init__(self):
         """

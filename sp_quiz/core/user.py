@@ -60,5 +60,5 @@ class UserProgress:
     average_reviews_per_day: float = 0.0
     retention_rate: float = 0.0
     difficulty_factor: float = 1.0
-    created_at: datetime = field(default_factory=datetime.datetime.utcnow)
-    updated_at: datetime = field(default_factory=datetime.datetime.utcnow)
+    created_at: datetime = field(default_factory=datetime.utcnow)
+    updated_at: datetime = field(default_factory=datetime.utcnow)

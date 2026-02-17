@@ -34,7 +34,7 @@ class TestUserProgressCreation(unittest.TestCase):
     
     def test_full_user_progress_creation(self):
         """Test creating UserProgress with all fields."""
-        now = datetime.datetime.utcnow()
+        now = datetime.utcnow()
         last_review = now - timedelta(days=1)
         
         progress = UserProgress(
@@ -299,7 +299,7 @@ class TestUserProgressStreaks(unittest.TestCase):
     
     def test_last_review_date_tracking(self):
         """Test tracking last review date."""
-        yesterday = datetime.datetime.utcnow() - timedelta(days=1)
+        yesterday = datetime.utcnow() - timedelta(days=1)
         progress = UserProgress(
             user_id="user_123",
             last_review_date=yesterday
@@ -480,18 +480,18 @@ class TestUserProgressTimestamps(unittest.TestCase):
     
     def test_created_at_defaults_to_now(self):
         """Test created_at defaults to current time."""
-        before = datetime.datetime.utcnow()
+        before = datetime.utcnow()
         progress = UserProgress(user_id="user_123")
-        after = datetime.datetime.utcnow()
+        after = datetime.utcnow()
         
         self.assertGreaterEqual(progress.created_at, before)
         self.assertLessEqual(progress.created_at, after)
     
     def test_updated_at_defaults_to_now(self):
         """Test updated_at defaults to current time."""
-        before = datetime.datetime.utcnow()
+        before = datetime.utcnow()
         progress = UserProgress(user_id="user_123")
-        after = datetime.datetime.utcnow()
+        after = datetime.utcnow()
         
         self.assertGreaterEqual(progress.updated_at, before)
         self.assertLessEqual(progress.updated_at, after)
@@ -621,7 +621,7 @@ class TestUserProgressEquality(unittest.TestCase):
     
     def test_user_progress_with_same_data_are_equal(self):
         """Test UserProgress with identical data are equal."""
-        now = datetime.datetime.utcnow()
+        now = datetime.utcnow()
         
         progress1 = UserProgress(
             user_id="user_123",

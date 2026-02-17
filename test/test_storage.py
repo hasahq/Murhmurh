@@ -260,7 +260,7 @@ class TestInMemoryStorageReviewOperations(unittest.TestCase):
             state_after=CardState.LEARNING,
             interval_after=1.0,
             ease_factor_after=2.5,
-            due_datetime_after=datetime.datetime.utcnow()
+            due_datetime_after=datetime.utcnow()
         )
         
         saved_review = self.storage.save_review(review)
@@ -286,7 +286,7 @@ class TestInMemoryStorageReviewOperations(unittest.TestCase):
                 state_after=CardState.LEARNING,
                 interval_after=10.0,
                 ease_factor_after=2.5,
-                due_datetime_after=datetime.datetime.utcnow()
+                due_datetime_after=datetime.utcnow()
             )
             self.storage.save_review(review)
         
@@ -311,7 +311,7 @@ class TestInMemoryStorageReviewOperations(unittest.TestCase):
                 state_after=CardState.LEARNING,
                 interval_after=1.0,
                 ease_factor_after=2.5,
-                due_datetime_after=datetime.datetime.utcnow()
+                due_datetime_after=datetime.utcnow()
             )
             self.storage.save_review(review)
         
@@ -336,7 +336,7 @@ class TestInMemoryStorageReviewOperations(unittest.TestCase):
                 state_after=CardState.LEARNING,
                 interval_after=1.0,
                 ease_factor_after=2.5,
-                due_datetime_after=datetime.datetime.utcnow()
+                due_datetime_after=datetime.utcnow()
             )
             self.storage.save_review(review)
         
