@@ -545,3 +545,45 @@ class TestSM2PlusBoundaryConditions(unittest.TestCase):
             self.assertIsNotNone(update)
         except Exception as exc:  # noqa: BLE001
             self.fail(f"Algorithm raised an exception on zero-interval card: {exc}")
+
+
+class TestSM2PlusAdaptiveDifficulty(unittest.TestCase):
+    """
+    Test the Difficulty Factor (DF) calculation.
+
+    Spec formula:  DF = 1.0 + (retention_rate - 0.9) × 0.5
+    Clamp:         DF ∈ [0.7, 1.3]
+    """
+
+    def setUp(self):
+        self.algo = SM2Plus()
+
+    def test_df_at_target_retention(self):
+        """90 % retention → DF = 1.0."""
+        df = self.algo.calculate_difficulty_factor(retention_rate=0.90)
+        self.assertAlmostEqual(df, 1.0, places=5)
+
+    def test_df_above_target_increases_challenge(self):
+        """95 % retention → DF = 1.025 (> 1.0)."""
+        df = self.algo.calculate_difficulty_factor(retention_rate=0.95)
+        self.assertGreater(df, 1.0)
+        self.assertAlmostEqual(df, 1.0 + (0.95 - 0.9) * 0.5, places=5)
+
+    def test_df_below_target_eases_challenge(self):
+        """80 % retention → DF = 0.95 (< 1.0)."""
+        df = self.algo.calculate_difficulty_factor(retention_rate=0.80)
+        self.assertLess(df, 1.0)
+
+    def test_df_clamped_at_maximum(self):
+        """Perfect retention does not push DF above 1.3."""
+        df = self.algo.calculate_difficulty_factor(retention_rate=1.0)
+        self.assertLessEqual(df, 1.3)
+
+    def test_df_clamped_at_minimum(self):
+        """Zero retention does not push DF below 0.7."""
+        df = self.algo.calculate_difficulty_factor(retention_rate=0.0)
+        self.assertGreaterEqual(df, 0.7)
+
+
+if __name__ == "__main__":
+    unittest.main(verbosity=2)
