@@ -124,3 +124,73 @@ class TestForgettingCurve(unittest.TestCase):
             self.assertLessEqual(r, 1.0)
         except (ValueError, ArithmeticError):
             pass  # also acceptable
+
+
+class TestClamp(unittest.TestCase):
+    """Tests Max and Min clamp values
+    clamp(value, min_val, max_val"""
+
+    def test_in_range_unchanged(self):
+        self.assertEqual(clamp(2.0, 1.0, 3.0), 2.0)
+
+    def test_below_min_returns_min(self):
+        self.assertEqual(clamp(0.5, 1.3, 2.5), 1.3)
+
+    def test_above_max_returns_max(self):
+        self.assertEqual(clamp(99.0, 1.3, 2.5), 2.5)
+
+    def test_exactly_at_min(self):
+        self.assertEqual(clamp(1.3, 1.3, 2.5), 1.3)
+
+    def test_exactly_at_max(self):
+        self.assertEqual(clamp(2.5, 1.3, 2.5), 2.5)
+
+    def test_min_equals_max(self):
+        self.assertEqual(clamp(1.0, 2.0, 2.0), 2.0)
+        self.assertEqual(clamp(3.0, 2.0, 2.0), 2.0)
+
+    def test_negative_range(self):
+        self.assertEqual(clamp(-5.0, -10.0, -1.0), -5.0)
+        self.assertEqual(clamp(-15.0, -10.0, -1.0), -10.0)
+
+    def test_integer_inputs(self):
+        self.assertEqual(clamp(7, 1, 5), 5)
+        self.assertEqual(clamp(0, 1, 5), 1)
+
+
+class TestEaseFactorDelta(unittest.TestCase):
+    """Tests Rate of Change of ease Factor in Quality Reviews
+    Δ = 0.1 - (5-q)*(0.08 + (5-q)*0.02)"""
+
+    def _expected_delta(self, q: int) -> float:
+        return 0.1 - (5 - q) * (0.08 + (5 - q) * 0.02)
+
+    def test_all_quality_values(self):
+        for q in range(6):
+            with self.subTest(quality=q):
+                delta = ease_factor_delta(q)
+                self.assertAlmostEqual(delta, self._expected_delta(q), places=8)
+
+    def test_q5_positive_delta(self):
+        """q=5 → positive delta (EF increases)."""
+        self.assertGreater(ease_factor_delta(5), 0)
+
+    def test_q4_neutral_delta(self):
+        """q=4 → delta ≈ 0.0 (EF unchanged)."""
+        self.assertAlmostEqual(ease_factor_delta(4), 0.0, places=8)
+
+    def test_q3_slightly_negative_delta(self):
+        """q=3 → negative delta."""
+        self.assertLess(ease_factor_delta(3), 0)
+
+    def test_q0_largest_negative_delta(self):
+        """q=0 has the most negative delta."""
+        delta_0 = ease_factor_delta(0)
+        delta_1 = ease_factor_delta(1)
+        self.assertLess(delta_0, delta_1)
+
+    def test_monotonic_increase_with_quality(self):
+        """Higher quality → larger (less negative) delta."""
+        deltas = [ease_factor_delta(q) for q in range(6)]
+        for i in range(len(deltas) - 1):
+            self.assertLess(deltas[i], deltas[i + 1])
