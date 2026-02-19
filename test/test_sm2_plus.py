@@ -321,3 +321,227 @@ class TestSM2PlusIntervalCalculations(unittest.TestCase):
         update = self.algo.calculate_next_interval(card, quality=3)
 
         self.assertGreater(update.interval_days, 2.0)
+
+
+class TestSM2PlusLapseHandling(unittest.TestCase):
+    """Test relearning phase triggered by a failed review on a graduated card."""
+
+    def setUp(self):
+        self.algo = SM2Plus()
+
+    def test_lapse_sets_relearning_state(self):
+        """A q < 3 on a REVIEW card moves it to RELEARNING."""
+        card = _make_review_card(interval_days=10.0)
+        update = self.algo.handle_lapse(card)
+
+        self.assertEqual(update.new_state, CardState.RELEARNING)
+
+    def test_lapse_halves_interval(self):
+        """Interval after a lapse = max(1 day, previous × 0.5)."""
+        card = _make_review_card(interval_days=20.0)
+        update = self.algo.handle_lapse(card)
+
+        self.assertAlmostEqual(update.interval_days, 10.0, places=3)
+
+    def test_lapse_interval_floored_at_one_day(self):
+        """Lapse on a card with 1-day interval does not go below 1 day."""
+        card = _make_review_card(interval_days=1.0)
+        update = self.algo.handle_lapse(card)
+
+        self.assertGreaterEqual(update.interval_days, 1.0)
+
+    def test_lapse_penalises_ease_factor(self):
+        """Ease factor decreases by 0.2 on lapse (floored at 1.3)."""
+        card = _make_review_card(interval_days=5.0, ease_factor=2.5)
+        update = self.algo.handle_lapse(card)
+
+        expected_ef = max(1.3, 2.5 - 0.2)
+        self.assertAlmostEqual(update.new_ease_factor, expected_ef, places=5)
+
+    def test_repeated_lapses_ef_never_below_1_3(self):
+        """Multiple lapses must never push EF below 1.3."""
+        card = _make_review_card(ease_factor=1.3, lapses=3)
+        for _ in range(5):
+            update = self.algo.handle_lapse(card)
+            card.ease_factor = update.new_ease_factor
+
+        self.assertGreaterEqual(card.ease_factor, 1.3)
+
+    def test_lapse_increments_lapses_count(self):
+        """lapses_count on the update must be one more than before."""
+        card = _make_review_card(interval_days=5.0, lapses=2)
+        update = self.algo.handle_lapse(card)
+
+        self.assertEqual(update.new_lapses_count, 3)
+
+    def test_calculate_next_interval_routes_to_lapse(self):
+        """calculate_next_interval with q<3 on REVIEW card == handle_lapse."""
+        card_a = _make_review_card(interval_days=10.0, ease_factor=2.5)
+        card_b = _make_review_card(interval_days=10.0, ease_factor=2.5)
+
+        via_api = self.algo.calculate_next_interval(card_a, quality=0)
+        via_lapse = self.algo.handle_lapse(card_b)
+
+        self.assertEqual(via_api.new_state, via_lapse.new_state)
+        self.assertAlmostEqual(via_api.interval_days, via_lapse.interval_days, places=5)
+        self.assertAlmostEqual(
+            via_api.new_ease_factor, via_lapse.new_ease_factor, places=5
+        )
+
+
+# ---------------------------------------------------------------------------
+# Test: calculate_initial_interval()
+# ---------------------------------------------------------------------------
+
+class TestSM2PlusInitialInterval(unittest.TestCase):
+    """Test the helper that computes the very first interval for a card."""
+
+    def setUp(self):
+        self.algo = SM2Plus()
+
+    def test_quality_3_returns_step1_interval(self):
+        """q ≥ 3 → first step interval (1 min)."""
+        interval = self.algo.calculate_initial_interval(quality=3)
+        self.assertAlmostEqual(interval.total_seconds(), 60, delta=1)
+
+    def test_quality_0_returns_step0_interval(self):
+        """q < 3 → repeat step 0 (1 min again)."""
+        interval = self.algo.calculate_initial_interval(quality=0)
+        self.assertIsInstance(interval, timedelta)
+        # Any non-negative interval is acceptable for the first step repeat
+        self.assertGreaterEqual(interval.total_seconds(), 0)
+
+    def test_return_type_is_timedelta(self):
+        interval = self.algo.calculate_initial_interval(quality=5)
+        self.assertIsInstance(interval, timedelta)
+
+
+# ---------------------------------------------------------------------------
+# Test: Return Type Contract (ScheduleUpdate)
+# ---------------------------------------------------------------------------
+
+class TestScheduleUpdateContract(unittest.TestCase):
+    """Ensure calculate_next_interval always returns a well-formed ScheduleUpdate."""
+
+    def setUp(self):
+        self.algo = SM2Plus()
+
+    def _assert_valid_update(self, update: ScheduleUpdate):
+        self.assertIsNotNone(update)
+        self.assertIsInstance(update.interval_days, float)
+        self.assertIsInstance(update.new_ease_factor, float)
+        self.assertIsInstance(update.new_state, CardState)
+        self.assertIsInstance(update.next_due, datetime)
+        self.assertGreaterEqual(update.interval_days, 0)
+        self.assertGreaterEqual(update.new_ease_factor, 1.3)
+        self.assertLessEqual(update.new_ease_factor, 2.5)
+
+    def test_new_card_q5_returns_valid_update(self):
+        self._assert_valid_update(
+            self.algo.calculate_next_interval(_make_new_card(), quality=5)
+        )
+
+    def test_review_card_q4_returns_valid_update(self):
+        self._assert_valid_update(
+            self.algo.calculate_next_interval(
+                _make_review_card(interval_days=2.0), quality=4
+            )
+        )
+
+    def test_review_card_q0_returns_valid_update(self):
+        self._assert_valid_update(
+            self.algo.calculate_next_interval(
+                _make_review_card(interval_days=2.0), quality=0
+            )
+        )
+
+
+# ---------------------------------------------------------------------------
+# Test: Determinism
+# ---------------------------------------------------------------------------
+
+class TestSM2PlusDeterminism(unittest.TestCase):
+    """Same inputs must always yield the same outputs (no hidden randomness)."""
+
+    def setUp(self):
+        self.algo = SM2Plus()
+
+    def test_determinism_new_card(self):
+        card_a = _make_new_card()
+        card_b = _make_new_card()
+
+        update_a = self.algo.calculate_next_interval(card_a, quality=4)
+        update_b = self.algo.calculate_next_interval(card_b, quality=4)
+
+        self.assertEqual(update_a.new_state, update_b.new_state)
+        self.assertAlmostEqual(update_a.interval_days, update_b.interval_days, places=8)
+        self.assertAlmostEqual(
+            update_a.new_ease_factor, update_b.new_ease_factor, places=8
+        )
+
+    def test_determinism_review_card(self):
+        for q in range(6):
+            with self.subTest(quality=q):
+                card_a = _make_review_card(interval_days=5.0, ease_factor=2.2)
+                card_b = _make_review_card(interval_days=5.0, ease_factor=2.2)
+
+                u_a = self.algo.calculate_next_interval(card_a, quality=q)
+                u_b = self.algo.calculate_next_interval(card_b, quality=q)
+
+                self.assertEqual(u_a.new_state, u_b.new_state)
+                self.assertAlmostEqual(u_a.interval_days, u_b.interval_days, places=8)
+
+
+class TestSM2PlusBoundaryConditions(unittest.TestCase):
+    """Stress the algorithm with extreme or degenerate inputs."""
+
+    def setUp(self):
+        self.algo = SM2Plus()
+
+    def test_q0_on_mature_card_maximum_penalty(self):
+        """q=0 on a card reviewed 50+ times should apply maximum EF penalty."""
+        card = _make_review_card(interval_days=60.0, ease_factor=2.5)
+        card.reviews_count = 50
+        update = self.algo.calculate_next_interval(card, quality=0)
+
+        # EF must decrease and interval must shrink
+        self.assertLess(update.new_ease_factor, 2.5)
+        self.assertLess(update.interval_days, 60.0)
+
+    def test_q5_on_fresh_card_fastest_progression(self):
+        """q=5 on a brand-new card should reach LEARNING state."""
+        card = _make_new_card()
+        update = self.algo.calculate_next_interval(card, quality=5)
+
+        self.assertIn(update.new_state, {CardState.LEARNING, CardState.REVIEW})
+
+    def test_very_large_interval_clamped(self):
+        """A card with an astronomically large interval is clamped to 365 days."""
+        card = _make_review_card(interval_days=1_000.0, ease_factor=2.5)
+        update = self.algo.calculate_next_interval(card, quality=5)
+
+        self.assertLessEqual(update.interval_days, 365.0)
+
+    def test_quality_3_is_not_treated_as_lapse(self):
+        """q=3 is the minimum success — card must not enter RELEARNING."""
+        card = _make_review_card(interval_days=5.0)
+        update = self.algo.calculate_next_interval(card, quality=3)
+
+        self.assertNotEqual(update.new_state, CardState.RELEARNING)
+
+    def test_next_due_is_in_the_future(self):
+        """next_due datetime must be after the time of calculation."""
+        before = datetime.utcnow()
+        card = _make_review_card(interval_days=2.0)
+        update = self.algo.calculate_next_interval(card, quality=4)
+
+        self.assertGreater(update.next_due, before)
+
+    def test_algorithm_with_zero_interval_card(self):
+        """A REVIEW card that somehow has 0-day interval should not crash."""
+        card = _make_review_card(interval_days=0.0)
+        try:
+            update = self.algo.calculate_next_interval(card, quality=4)
+            self.assertIsNotNone(update)
+        except Exception as exc:  # noqa: BLE001
+            self.fail(f"Algorithm raised an exception on zero-interval card: {exc}")
