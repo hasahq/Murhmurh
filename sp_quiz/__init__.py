@@ -1,3 +1,4 @@
+#sp_quiz/__init__.py
 """
 sp-quiz: Spaced Repetition Quiz Engine
 spaced repetition engine designed to optimize long-term
