@@ -347,3 +347,56 @@ class TestSchedulerThreadSafety(unittest.TestCase):
 
         # No duplicates
         self.assertEqual(len(results), len(set(results)))
+
+
+class TestSchedulerFuzzFactor(unittest.TestCase):
+    """
+    Anti-clustering fuzz (§4.3):
+        fuzz_range = min(interval × 0.05, 2 days)
+        actual_due = scheduled_due ± uniform(0, fuzz_range)
+    """
+
+    def setUp(self):
+        self.sched = Scheduler()
+
+    def test_fuzz_output_within_range(self):
+        """apply_fuzz result stays within ±fuzz_range of the scheduled_due."""
+        scheduled_due = datetime.utcnow() + timedelta(days=10)
+        interval_days = 10.0
+        fuzz_range = min(interval_days * 0.05, 2)  # 0.5 days
+
+        fuzzed = self.sched.apply_fuzz(
+            scheduled_due=scheduled_due,
+            interval_days=interval_days,
+        )
+
+        delta = abs((fuzzed - scheduled_due).total_seconds())
+        max_delta = fuzz_range * 86400
+        self.assertLessEqual(delta, max_delta + 1)  # +1 s tolerance
+
+    def test_fuzz_with_zero_factor_returns_same_time(self):
+        """apply_fuzz with fuzz_factor=0.0 must return the exact scheduled_due."""
+        scheduled_due = datetime.utcnow() + timedelta(days=5)
+        fuzzed = self.sched.apply_fuzz(
+            scheduled_due=scheduled_due,
+            interval_days=5.0,
+            fuzz_factor=0.0,
+        )
+        self.assertEqual(fuzzed, scheduled_due)
+
+    def test_fuzz_max_days_cap(self):
+        """
+        For a very large interval (e.g. 365 days), fuzz_range is capped at 2 days.
+        """
+        scheduled_due = datetime.utcnow() + timedelta(days=365)
+        fuzzed = self.sched.apply_fuzz(
+            scheduled_due=scheduled_due,
+            interval_days=365.0,
+        )
+        delta = abs((fuzzed - scheduled_due).total_seconds())
+        max_delta = 2 * 86400
+        self.assertLessEqual(delta, max_delta + 1)
+
+
+if __name__ == "__main__":
+    unittest.main(verbosity=2)
