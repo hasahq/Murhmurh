@@ -75,7 +75,8 @@ def run_unit_tests():
         'test_review',
         'test_user',
         'test_exceptions',
-        'test_storage'
+        'test_storage',
+        'test_quality_scorer.py'
     ]
     
     total_result = unittest.TestResult()
