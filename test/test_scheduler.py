@@ -296,3 +296,54 @@ class TestSchedulerPriorityOrdering(unittest.TestCase):
             )
 
 
+class TestSchedulerThreadSafety(unittest.TestCase):
+    """
+    Basic concurrent integrity check.
+
+    We spawn N threads that each add M cards and assert the final count
+    equals N×M with no crashes or corruption.
+    """
+
+    def test_concurrent_adds_do_not_corrupt_heap(self):
+        sched = Scheduler()
+        N_THREADS, CARDS_PER_THREAD = 10, 20
+        barrier = threading.Barrier(N_THREADS)
+
+        def worker(thread_id: int):
+            barrier.wait()
+            for i in range(CARDS_PER_THREAD):
+                card = _make_card(f"t{thread_id}_c{i}", _ts(thread_id * 0.01 + i))
+                sched.add_card(card)
+
+        threads = [threading.Thread(target=worker, args=(t,)) for t in range(N_THREADS)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+        self.assertEqual(sched.size(), N_THREADS * CARDS_PER_THREAD)
+
+    def test_concurrent_pop_does_not_return_duplicates(self):
+        """No card should be popped more than once even under concurrent access."""
+        sched = Scheduler()
+        N = 100
+        for i in range(N):
+            sched.add_card(_make_card(f"c{i}", _ts(i * 0.001)))
+
+        results = []
+        lock = threading.Lock()
+
+        def popper():
+            card = sched.pop_next_due()
+            if card is not None:
+                with lock:
+                    results.append(card.card_id)
+
+        threads = [threading.Thread(target=popper) for _ in range(N)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+        # No duplicates
+        self.assertEqual(len(results), len(set(results)))
