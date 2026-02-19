@@ -193,3 +193,73 @@ class TestSM2PlusLearningPhase(unittest.TestCase):
         update = self.algo.calculate_next_interval(card, quality=2)
 
         self.assertNotEqual(update.new_state, CardState.REVIEW)
+
+
+class TestSM2PlusEaseFactor(unittest.TestCase):
+    """Validate the EF adjustment formula for every quality value."""
+
+    # EF' = EF + 0.1 - (5-q)*(0.08 + (5-q)*0.02)
+
+    def setUp(self):
+        self.algo = SM2Plus()
+        self.initial_ef = 2.5
+
+    def _expected_ef(self, current_ef: float, q: int) -> float:
+        raw = current_ef + 0.1 - (5 - q) * (0.08 + (5 - q) * 0.02)
+        return max(1.3, min(2.5, raw))
+
+    def test_ef_adjustment_q5(self):
+        new_ef = self.algo.adjust_ease_factor(self.initial_ef, quality=5)
+        self.assertAlmostEqual(new_ef, self._expected_ef(self.initial_ef, 5), places=5)
+
+    def test_ef_adjustment_q4(self):
+        new_ef = self.algo.adjust_ease_factor(self.initial_ef, quality=4)
+        self.assertAlmostEqual(new_ef, self._expected_ef(self.initial_ef, 4), places=5)
+
+    def test_ef_adjustment_q3(self):
+        new_ef = self.algo.adjust_ease_factor(self.initial_ef, quality=3)
+        self.assertAlmostEqual(new_ef, self._expected_ef(self.initial_ef, 3), places=5)
+
+    def test_ef_adjustment_q2(self):
+        """q=2 should decrease EF."""
+        new_ef = self.algo.adjust_ease_factor(self.initial_ef, quality=2)
+        self.assertAlmostEqual(new_ef, self._expected_ef(self.initial_ef, 2), places=5)
+        self.assertLess(new_ef, self.initial_ef)
+
+    def test_ef_adjustment_q1(self):
+        new_ef = self.algo.adjust_ease_factor(self.initial_ef, quality=1)
+        self.assertAlmostEqual(new_ef, self._expected_ef(self.initial_ef, 1), places=5)
+        self.assertLess(new_ef, self.initial_ef)
+
+    def test_ef_adjustment_q0(self):
+        new_ef = self.algo.adjust_ease_factor(self.initial_ef, quality=0)
+        self.assertAlmostEqual(new_ef, self._expected_ef(self.initial_ef, 0), places=5)
+
+    def test_ef_clamped_at_min_1_3(self):
+        """EF must never fall below 1.3, regardless of repeated low quality."""
+        ef = 1.3
+        for _ in range(10):
+            ef = self.algo.adjust_ease_factor(ef, quality=0)
+        self.assertGreaterEqual(ef, 1.3)
+
+    def test_ef_does_not_exceed_initial_with_q5(self):
+        """
+        Repeated q=5 reviews on a fresh card should not push EF above 2.5.
+
+        Note: The formula for q=5 gives +0.1 which would exceed 2.5 from 2.5,
+        so it should be clamped.  (Some implementations start EF below 2.5
+        and cap it there — either way it must stay ≤ 2.5.)
+        """
+        ef = 2.5
+        for _ in range(20):
+            ef = self.algo.adjust_ease_factor(ef, quality=5)
+        self.assertLessEqual(ef, 2.5)
+
+    def test_ef_q4_no_change_from_formula(self):
+        """
+        q=4 is the 'neutral' quality: EF' = EF + 0.1 - 1*(0.08+1*0.02) = EF + 0.0.
+        The formula produces exactly 0 delta, EF unchanged.
+        """
+        new_ef = self.algo.adjust_ease_factor(2.5, quality=4)
+        # delta = 0.1 - 1*(0.08 + 0.02) = 0.1 - 0.10 = 0.0
+        self.assertAlmostEqual(new_ef, 2.5, places=5)
