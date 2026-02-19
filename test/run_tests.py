@@ -141,7 +141,7 @@ def main():
     verbosity = 0 if args.quiet else args.verbose
     
     print("="*70)
-    print("SP-QUIZ PHASE 1 TEST SUITE")
+    print("SP-QUIZ PHASE 1&2 TEST SUITE")
     print("="*70)
     
     if args.type == 'all':
