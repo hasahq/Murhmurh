@@ -263,3 +263,61 @@ class TestSM2PlusEaseFactor(unittest.TestCase):
         new_ef = self.algo.adjust_ease_factor(2.5, quality=4)
         # delta = 0.1 - 1*(0.08 + 0.02) = 0.1 - 0.10 = 0.0
         self.assertAlmostEqual(new_ef, 2.5, places=5)
+
+
+class TestSM2PlusIntervalCalculations(unittest.TestCase):
+    """Validate interval progression in the review phase."""
+
+    def setUp(self):
+        self.algo = SM2Plus()
+
+    def test_first_review_phase_interval_grows(self):
+        """Each successful review should extend the interval."""
+        card = _make_review_card(interval_days=1.0, ease_factor=2.5)
+
+        update = self.algo.calculate_next_interval(card, quality=4)
+
+        # New interval = 1.0 × 2.5 = 2.5 days
+        self.assertGreater(update.interval_days, card.interval_days)
+        self.assertAlmostEqual(update.interval_days, 2.5, places=1)
+
+    def test_successive_reviews_compound_interval(self):
+        """Simulate 3 consecutive successful reviews and verify compounding."""
+        card = _make_review_card(interval_days=1.0, ease_factor=2.5)
+        expected = 1.0
+
+        for _ in range(3):
+            update = self.algo.calculate_next_interval(card, quality=4)
+            card.interval_days = update.interval_days
+            card.ease_factor = update.new_ease_factor
+            expected *= 2.5  # EF unchanged for q=4
+
+        self.assertAlmostEqual(card.interval_days, expected, places=1)
+
+    def test_interval_minimum_enforced(self):
+        """Interval must always be ≥ MIN_INTERVAL (spec: 1 min = 60 s)."""
+        card = _make_review_card(interval_days=0.00001)
+        update = self.algo.calculate_next_interval(card, quality=0)
+
+        self.assertGreaterEqual(update.interval_days, 60 / 86400)
+
+    def test_interval_maximum_enforced(self):
+        """Interval must never exceed MAX_INTERVAL (spec: 365 days)."""
+        card = _make_review_card(interval_days=400.0, ease_factor=2.5)
+        update = self.algo.calculate_next_interval(card, quality=5)
+
+        self.assertLessEqual(update.interval_days, 365.0)
+
+    def test_interval_does_not_grow_on_lapse(self):
+        """A lapse (q < 3) on a review card must not grow the interval."""
+        card = _make_review_card(interval_days=30.0, ease_factor=2.5)
+        update = self.algo.calculate_next_interval(card, quality=1)
+
+        self.assertLess(update.interval_days, 30.0)
+
+    def test_q3_threshold_succeeds(self):
+        """q=3 is the minimum passing quality — interval should grow."""
+        card = _make_review_card(interval_days=2.0, ease_factor=2.0)
+        update = self.algo.calculate_next_interval(card, quality=3)
+
+        self.assertGreater(update.interval_days, 2.0)
