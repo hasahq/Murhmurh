@@ -83,6 +83,13 @@ class Card:
     updated_at: datetime = field(default_factory=datetime.utcnow)
     last_reviewed_at: Optional[datetime] = None
 
+    # Quality AutoScorer Fields
+    global_review_count: int = 0
+    global_mean_quality: int = 3.4
+    global_success_rate: float = 0.65
+    global_mean_first_time: float = 5.2
+    difficulty_rating: float = 0.5 
+
     def __post_init__(self):
         """
         Validate card data after initialization.
