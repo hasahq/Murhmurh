@@ -66,9 +66,9 @@ class Scheduler:
         with self._lock:
             # If card exists, rebuild heap without it
             if card.card_id in self._card_map:
-                del self._card_map[card.card_id]
+                old_card_id = card.card_id # Marks old card as removed- lazy deletion...
                 self._heap = [(due, cid, c) for due, cid, c in self._heap 
-                             if cid != card.card_id]
+                             if cid != old_card_id]
                 heapq.heapify(self._heap)
             
             # Add to heap
@@ -117,7 +117,7 @@ class Scheduler:
             return None
     
     def get_due_cards(self, reference_time: Optional[datetime] = None,
-                      limit: Optional[int] = None) -> List[Card]:
+                  limit: Optional[int] = None, user_id: Optional[str] = None) -> List[Card]:
         """
         Get all cards due by reference time.
         
@@ -144,6 +144,9 @@ class Scheduler:
                 if card_id not in self._card_map:
                     continue  # Skip removed cards
                 
+                if user_id and card.user_id != user_id:
+                    continue # Filters by user if provided
+
                 if due <= reference_time:
                     due_cards.append(card)
                     if limit and len(due_cards) >= limit:

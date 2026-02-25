@@ -190,23 +190,44 @@ class SM2Plus:
             )
     
     def _handle_relearning_phase(self, card: Card, quality: int) -> ScheduleUpdate:
-        """Handle RELEARNING state cards (similar to learning but tracks lapses)."""
-        # Relearning uses same steps as learning
-        result = self._handle_learning_phase(card, quality)
+        """
+        Handle RELEARNING state cards (one-step recovery).
         
-        # If graduated from relearning, set state back to REVIEW
-        if result.new_state == CardState.REVIEW:
-            return result
+        Unlike the 3-step learning progression, RELEARNING graduates in a single
+        step. Any success (q≥3) brings the card back to REVIEW state.
         
-        # Otherwise keep in RELEARNING
-        return ScheduleUpdate(
-            interval_days=result.interval_days,
-            new_ease_factor=result.new_ease_factor,
-            new_state=CardState.RELEARNING,
-            new_learning_step=result.new_learning_step,
-            new_lapses_count=result.new_lapses_count,
-            next_due=result.next_due
-        )
+        This implements the lapse recovery mechanism: after a lapse, a single
+        correct answer returns the card to review phase.
+        """
+        if quality >= 3:
+            # One-step recovery: success → back to REVIEW
+            new_ef = self.adjust_ease_factor(card.ease_factor, quality)
+            interval_days = 1.0
+            next_due = datetime.utcnow() + timedelta(days=interval_days)
+            
+            return ScheduleUpdate(
+                interval_days=interval_days,
+                new_ease_factor=new_ef,
+                new_state=CardState.REVIEW,
+                new_learning_step=0,
+                new_lapses_count=card.lapses_count,
+                next_due=next_due
+            )
+        else:
+            # Failed again in relearning: stay in RELEARNING at step 0
+            # Use the first learning step interval (1 minute)
+            interval_seconds = LEARNING_STEPS[0]
+            interval_days = interval_seconds / 86400.0
+            next_due = datetime.utcnow() + timedelta(seconds=interval_seconds)
+            
+            return ScheduleUpdate(
+                interval_days=interval_days,
+                new_ease_factor=card.ease_factor,
+                new_state=CardState.RELEARNING,
+                new_learning_step=0,
+                new_lapses_count=card.lapses_count,
+                next_due=next_due
+            )
     
     def _handle_review_lapse(self, card: Card) -> ScheduleUpdate:
         """Handle failed review (quality < 3) for REVIEW cards."""

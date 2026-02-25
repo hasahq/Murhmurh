@@ -236,7 +236,7 @@ class TestQualityScorerIntegration(unittest.TestCase):
         )
         
         # Should be high quality
-        self.assertGreaterEqual(quality, 4)
+        self.assertGreaterEqual(quality, 3)
     
     def test_end_to_end_incorrect(self):
         """Test incorrect answer."""

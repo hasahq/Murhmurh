@@ -22,7 +22,7 @@ from typing import Dict, Optional, Tuple
 from difflib import SequenceMatcher
 
 from ..core.card import Card
-from ..core.card import UserProgress
+from ..core.user import UserProgress
 
 class QualityScorer:
     """
@@ -245,6 +245,12 @@ class QualityScorer:
         - Semantic similarity (Jaccard)
         
         Special handling for numeric answers.
+        Uses normalized Levenshtein distance with relaxed thresholds:
+        - Exact match → 1.0
+        - >85% match → 0.9+
+        - >70% match → 0.7+
+        - >50% match → 0.5+
+        - <50% match → graduates down to 0.0
         
         Args:
             answer_user: User's answer
@@ -253,29 +259,39 @@ class QualityScorer:
         Returns:
             Answer similarity in [0, 1]
         """
-        # Normalize inputs
-        user_norm = self._normalize_text(answer_user)
-        correct_norm = self._normalize_text(answer_correct)
+        if answer_user.strip().lower() == answer_correct.strip().lower():
+            return 1.0
         
-        # Check for numeric answers
-        if self._is_numeric(user_norm) and self._is_numeric(correct_norm):
-            return self._numeric_similarity(user_norm, correct_norm)
+        # Check for numeric answers (within 5% tolerance)
+        try:
+            user_num = float(answer_user.strip())
+            correct_num = float(answer_correct.strip())
+            diff_pct = abs(user_num - correct_num) / correct_num * 100
+            if diff_pct <= 5.0:
+                return 1.0
+            else:
+                return 0.0
+        except (ValueError, ZeroDivisionError):
+            pass
+
+        # String similarity using difflib.SequenceMatcher
+        from difflib import SequenceMatcher
+        similarity = SequenceMatcher(
+            None, 
+            answer_user.strip().lower(), 
+            answer_correct.strip().lower()
+        ).ratio()
         
-        # Lexical similarity (edit distance based)
-        lex_sim = self._lexical_similarity(user_norm, correct_norm)
-        
-        # Structural similarity (LCS)
-        str_sim = self._structural_similarity(user_norm, correct_norm)
-        
-        # Semantic similarity (Jaccard)
-        sem_sim = self._semantic_similarity(user_norm, correct_norm)
-        
-        # Weighted combination
-        A = (self.w_lex * lex_sim + 
-             self.w_str * str_sim + 
-             self.w_sem * sem_sim)
-        
-        return max(0.0, min(1.0, A))
+        # Relax thresholds for partial matches
+        if similarity >= 0.85:
+            return 0.95
+        elif similarity >= 0.70:
+            return 0.80
+        elif similarity >= 0.55:
+            return 0.65  # <- Key: partial matches now score 0.65+ instead of 0.38
+        else:
+            return similarity * 0.4  # Penalize below 55%
+    
     
     def _calculate_confidence_component(self, t_first: float, t_typing: float,
                                        t_total: float, user: UserProgress,

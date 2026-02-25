@@ -62,3 +62,11 @@ class UserProgress:
     difficulty_factor: float = 1.0
     created_at: datetime = field(default_factory=datetime.utcnow)
     updated_at: datetime = field(default_factory=datetime.utcnow)
+
+    # Quality auto-scorer Fields
+    mean_response_time: float = 8.5
+    std_response_time: float = 6.2
+    mean_first_response: float = 5.2
+    mean_typing_speed: float = 3.5
+    confidence_calibration: float = 0.0
+    learning_efficiency: float = 1.0
