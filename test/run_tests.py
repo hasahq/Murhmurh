@@ -1,15 +1,25 @@
 #!/usr/bin/env python3
 """
 Test runner for sp-quiz tests. 
-Note:- {Only Phase 1 Tests Included for Now}
+Note:- {Only Phase 1 & 2 Tests Included for Now}
 
-This script runs all unit and integration tests with coverage reporting.
+This script runs all unit, integration, and benchmark tests with a
+structured summary.  Pass --type to narrow execution scope.
+
+Usage::
+
+    python run_tests.py                # run everything
+    python run_tests.py --type unit
+    python run_tests.py --type integration
+    python run_tests.py --type benchmarks
+    python run_tests.py -q             # minimal output
 """
 
 import unittest
 import sys
 import os
 from io import StringIO
+import argparse
 
 # Add parent directory to path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -71,11 +81,18 @@ def run_unit_tests():
     
     # Run tests for each module
     test_modules = [
+        #phase1
         'test_card',
         'test_review',
         'test_user',
         'test_exceptions',
-        'test_storage'
+        'test_storage',
+        #auto-qualityreview generation
+        'test_quality_scorer.py',
+        #Phase2
+        'test_sm2_plus',
+        'test_scheduler',
+        'test_utils'
     ]
     
     total_result = unittest.TestResult()
@@ -109,6 +126,18 @@ def run_integration_tests():
     
     return result
 
+def run_benchmark_tests():
+    """Run Phase 2 performance benchmarks."""
+    print("\n" + "="*70)
+    print("RUNNING BENCHMARK / PERFORMANCE TESTS (Phase 2)")
+    print("="*70 + "\n")
+
+    loader = unittest.TestLoader()
+    suite = loader.loadTestsFromName('test_benchmarks')
+    runner = unittest.TextTestRunner(verbosity=2)
+    result = runner.run(suite)
+
+    return result
 
 def main():
     """Main test runner."""
@@ -117,7 +146,7 @@ def main():
     parser = argparse.ArgumentParser(description='Run sp-quiz Phase 1 tests')
     parser.add_argument(
         '--type',
-        choices=['all', 'unit', 'integration'],
+        choices=['all', 'unit', 'integration', 'benchmarks'],
         default='all',
         help='Type of tests to run (default: all)'
     )
@@ -140,7 +169,7 @@ def main():
     verbosity = 0 if args.quiet else args.verbose
     
     print("="*70)
-    print("SP-QUIZ PHASE 1 TEST SUITE")
+    print("SP-QUIZ PHASE 1&2 TEST SUITE")
     print("="*70)
     
     if args.type == 'all':
@@ -149,6 +178,8 @@ def main():
         result = run_unit_tests()
     elif args.type == 'integration':
         result = run_integration_tests()
+    elif args.type == 'benchmarks':
+        result = run_benchmark_tests()
     
     print_summary(result)
     

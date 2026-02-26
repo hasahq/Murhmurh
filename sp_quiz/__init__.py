@@ -1,3 +1,4 @@
+#sp_quiz/__init__.py
 """
 sp-quiz: Spaced Repetition Quiz Engine
 spaced repetition engine designed to optimize long-term
@@ -46,12 +47,34 @@ from sp_quiz.storage import (
     InMemoryStorage
 )
 
+from .algorithms import (
+    SM2Plus,
+    ScheduleUpdate,
+    Scheduler,
+    QualityScorer,
+)
+
+from .algorithms.utils import (
+    forgetting_curve,
+    clamp,
+    ease_factor_delta,
+    calculate_interval,
+    days_to_timedelta,
+    timedelta_to_days,
+    retention_from_interval,
+    stability_from_reviews,
+)
+
 __all__ = [
     '__version__',
+
+    #Core Models
     'Card',
     'CardState',
     'Review',
     'UserProgress',
+
+    #Exceptions
     'SpQuizError',
     'CardNotFoundError',
     'InvalidCardStateError',
@@ -62,5 +85,21 @@ __all__ = [
     'ConcurrencyError',
     'StorageInterface',
     'InMemoryStorage',
+
+    #Algorithms
+    'SM2Plus',
+    'ScheduleUpdate',
+    'Scheduler',
+    'QualityScorer',
+
+    #Utilities
+    'forgetting_curve',
+    'clamp',
+    'ease_factor_delta',
+    'calculate_interval',
+    'days_to_timedelta',
+    'timedelta_to_days',
+    'retention_from_interval',
+    'stability_from_reviews',
 ]
 

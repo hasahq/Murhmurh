@@ -11,6 +11,8 @@ Exceptions:
     SessionNotFoundError: Raised when a session cannot be found
     SessionClosedError: Raised when operating on a closed session
     InvalidQualityRatingError: Raised for invalid quality ratings
+    ReviewNotFoundError: Raised when a Review for a Card is non-discoverable
+    ValidationError: Raised when there's Data Validation Error
     StorageError: Raised for storage operation failures
     ConcurrencyError: Raised for concurrent modification conflicts
 """
@@ -24,6 +26,16 @@ class SpQuizError(Exception):
 class CardNotFoundError(SpQuizError):
     """Card with given ID does not exist."""
     code = 'CARD_001'
+
+
+class ReviewNotFoundError(SpQuizError):
+    """Review with given ID does not exist"""
+    code = 'REVIEW_002'
+
+
+class ValidationError(SpQuizError):
+    """Data validation failed."""
+    code = 'VALIDATION_001'
 
 
 class InvalidCardStateError(SpQuizError):
